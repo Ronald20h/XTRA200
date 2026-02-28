@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { levelDB } = require('../../db-manager');
+const { getLevelFromXP, xpForLevel } = require('../../handlers/level-system');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -9,18 +10,30 @@ module.exports = {
   async execute(interaction) {
     const target = interaction.options.getUser('user') || interaction.user;
     const guildId = interaction.guild.id;
-    const xp = levelDB.get(`xp_${guildId}_${target.id}`) || 0;
-    const level = levelDB.get(`level_${guildId}_${target.id}`) || 0;
-    const nextXp = (level + 1) * 100;
+    const key = `${guildId}_${target.id}`;
+
+    const userData = levelDB.get(key) || { xp: 0, level: 0, messages: 0 };
+    const xp = userData.xp || 0;
+    const level = userData.level || 0;
+    const messages = userData.messages || 0;
+
+    const { remaining, needed } = getLevelFromXP(xp);
+    const progress = Math.floor((remaining / needed) * 10);
+    const bar = '█'.repeat(progress) + '░'.repeat(10 - progress);
+
     const embed = new EmbedBuilder()
       .setColor('#5865F2')
       .setTitle(`📊 مستوى ${target.username}`)
+      .setThumbnail(target.displayAvatarURL({ dynamic: true }))
       .addFields(
         { name: '🎯 المستوى', value: `\`${level}\``, inline: true },
-        { name: '⭐ XP', value: `\`${xp}/${nextXp}\``, inline: true }
+        { name: '⭐ XP', value: `\`${remaining}/${needed}\``, inline: true },
+        { name: '💬 عدد الرسائل', value: `\`${messages}\``, inline: true },
+        { name: '📈 التقدم', value: `\`[${bar}]\` ${Math.floor((remaining / needed) * 100)}%`, inline: false }
       )
-      .setThumbnail(target.displayAvatarURL({ dynamic: true }))
-      .setFooter({ text: interaction.guild.name });
+      .setFooter({ text: interaction.guild.name })
+      .setTimestamp();
+
     await interaction.reply({ embeds: [embed] });
   }
 };
