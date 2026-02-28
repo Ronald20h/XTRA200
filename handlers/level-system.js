@@ -3,10 +3,7 @@
 // ======================================
 
 const { EmbedBuilder } = require('discord.js');
-const { Database } = require('st.db');
-
-const levelDB = new Database('./Json-db/Bots/levelDB.json');
-const systemDB = new Database('./Json-db/Bots/systemDB.json');
+const { levelDB, systemDB } = require('../db-manager');
 
 function xpForLevel(level) {
   return 100 * (level + 1) * (level + 1);
@@ -37,20 +34,22 @@ function initLevelSystem(client) {
       const key = `${guildId}_${userId}`;
       const now = Date.now();
 
+      // كولداون دقيقة
       if (cooldowns.has(key) && now - cooldowns.get(key) < 60000) return;
       cooldowns.set(key, now);
 
-      const xpGain = Math.floor(Math.random() * 11) + 15;
-
+      // جلب بيانات العضو
       let userData = levelDB.get(key) || { xp: 0, level: 0, messages: 0 };
-      userData.xp += xpGain;
+      const xpGain = Math.floor(Math.random() * 11) + 15;
+      userData.xp = (userData.xp || 0) + xpGain;
       userData.messages = (userData.messages || 0) + 1;
 
       const { level: newLevel } = getLevelFromXP(userData.xp);
-      const oldLevel = userData.level;
+      const oldLevel = userData.level || 0;
       userData.level = newLevel;
       levelDB.set(key, userData);
 
+      // إشعار الترقي
       if (newLevel > oldLevel) {
         const levelChannelId = systemDB.get(`level_channel_${guildId}`);
         const channel = levelChannelId
@@ -71,13 +70,16 @@ function initLevelSystem(client) {
 
         await channel.send({ content: `<@${userId}>`, embeds: [embed] });
 
+        // رتبة المستوى
         const levelRole = systemDB.get(`level_role_${guildId}_${newLevel}`);
         if (levelRole) {
           const role = message.guild.roles.cache.get(levelRole);
           if (role) await message.member.roles.add(role).catch(() => {});
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('[LevelSystem]', e);
+    }
   });
 
   console.log('✅ Level system loaded');
