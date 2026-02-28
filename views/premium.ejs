@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Premium - Xtra System</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="dark-bg">
+<%- include('partials/header', { user: typeof user !== 'undefined' ? user : null, botAvatar: '', isOwner: false }) %>
+
+<main class="premium-page">
+  <div class="premium-hero">
+    <div class="premium-hero-glow"></div>
+    <h1 class="premium-title">👑 <span class="gradient-text">Premium</span></h1>
+    <p class="premium-subtitle">احصل على مميزات حصرية وقدرات لا محدودة لسيرفرك</p>
+  </div>
+
+  <!-- مميزات Premium -->
+  <section class="premium-features-section">
+    <div class="premium-features-grid">
+      <div class="premium-feat-card">
+        <div class="feat-icon">🛡️</div>
+        <h3>حماية متقدمة</h3>
+        <p>حماية كاملة من الريد والكيك والبان الجماعي</p>
+      </div>
+      <div class="premium-feat-card">
+        <div class="feat-icon">🎫</div>
+        <h3>تكتات غير محدودة</h3>
+        <p>لا حد لعدد التكتات وخيارات تخصيص كاملة</p>
+      </div>
+      <div class="premium-feat-card">
+        <div class="feat-icon">📢</div>
+        <h3>برودكاست مميز</h3>
+        <p>إرسال رسائل جماعية باسم البوت لكل السيرفرات</p>
+      </div>
+      <div class="premium-feat-card">
+        <div class="feat-icon">⭐</div>
+        <h3>نظام ليفل</h3>
+        <p>نظام XP وليفل احترافي مع لوحة متصدرين</p>
+      </div>
+      <div class="premium-feat-card">
+        <div class="feat-icon">🎉</div>
+        <h3>ترحيب بصورة</h3>
+        <p>رسائل ترحيب ووداع مخصصة مع صورة جميلة</p>
+      </div>
+      <div class="premium-feat-card">
+        <div class="feat-icon">⚡</div>
+        <h3>أولوية الدعم</h3>
+        <p>دعم فوري من الفريق على مدار الساعة</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- خطط الأسعار -->
+  <section class="pricing-section">
+    <h2 class="section-title">💰 الأسعار</h2>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <div class="price-badge">شهري</div>
+        <div class="price-amount">20 ج.م</div>
+        <div class="price-period">/ شهر</div>
+        <ul class="price-features">
+          <li>✅ جميع مميزات Premium</li>
+          <li>✅ دعم فوري</li>
+          <li>✅ لسيرفر واحد</li>
+        </ul>
+      </div>
+      <div class="price-card featured-price">
+        <div class="price-badge popular">الأشهر ⭐</div>
+        <div class="price-amount">50 ج.م</div>
+        <div class="price-period">/ 3 أشهر</div>
+        <ul class="price-features">
+          <li>✅ جميع مميزات Premium</li>
+          <li>✅ توفير 10 جنيه</li>
+          <li>✅ لسيرفر واحد</li>
+          <li>✅ أولوية الدعم</li>
+        </ul>
+      </div>
+      <div class="price-card">
+        <div class="price-badge">سنوي</div>
+        <div class="price-amount">150 ج.م</div>
+        <div class="price-period">/ سنة</div>
+        <ul class="price-features">
+          <li>✅ جميع مميزات Premium</li>
+          <li>✅ توفير 90 جنيه</li>
+          <li>✅ لسيرفر واحد</li>
+          <li>✅ دعم VIP</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- طريقة الدفع -->
+  <section class="payment-section">
+    <h2 class="section-title">💳 طريقة الدفع</h2>
+    <div class="payment-grid">
+      <div class="payment-card">
+        <div class="payment-icon">📱</div>
+        <h3>فودافون كاش</h3>
+        <div class="payment-number">01069181060</div>
+        <p class="payment-steps">
+          1. افتح تطبيق فودافون كاش<br>
+          2. اختر "تحويل أموال"<br>
+          3. أدخل الرقم أعلاه<br>
+          4. أرسل السكرين شوت على التكت
+        </p>
+        <a href="<%= paymentInfo.ticketLink %>" target="_blank" class="btn-payment">
+          <i class="fas fa-ticket-alt"></i> افتح تكت
+        </a>
+      </div>
+      <div class="payment-card">
+        <div class="payment-icon">🎫</div>
+        <h3>عبر التكت</h3>
+        <p class="payment-steps">
+          1. اضغط على "افتح تكت"<br>
+          2. أرسل ID سيرفرك<br>
+          3. اختر مدة الاشتراك<br>
+          4. اتبع تعليمات فريق الدعم
+        </p>
+        <a href="<%= paymentInfo.ticketLink %>" target="_blank" class="btn-payment">
+          <i class="fab fa-discord"></i> افتح تكت الآن
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- سيرفرات Premium -->
+  <% if (premiumGuilds && premiumGuilds.length > 0) { %>
+  <section class="premium-guilds-section">
+    <h2 class="section-title">👑 سيرفرات Premium</h2>
+    <div class="premium-guilds-list">
+      <% premiumGuilds.forEach(g => { %>
+        <div class="premium-guild-item">
+          <img src="<%= g.icon || 'https://cdn.discordapp.com/embed/avatars/0.png' %>" alt="<%= g.name %>" class="pg-icon">
+          <span class="pg-name"><%= g.name %></span>
+          <span class="pg-badge">👑 Premium</span>
+        </div>
+      <% }) %>
+    </div>
+  </section>
+  <% } %>
+</main>
+
+<style>
+.premium-page { max-width: 1100px; margin: 0 auto; padding: 2rem 1rem; }
+.premium-hero { text-align: center; padding: 3rem 1rem; position: relative; }
+.premium-hero-glow { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 400px; height: 200px; background: radial-gradient(ellipse, rgba(255,215,0,0.15), transparent); pointer-events: none; }
+.premium-title { font-size: 3rem; margin-bottom: 1rem; }
+.premium-subtitle { color: #aaa; font-size: 1.1rem; }
+.premium-features-section, .pricing-section, .payment-section, .premium-guilds-section { margin-bottom: 3rem; }
+.premium-features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+.premium-feat-card { background: rgba(255,215,0,0.05); border: 1px solid rgba(255,215,0,0.2); border-radius: 12px; padding: 1.5rem; text-align: center; }
+.premium-feat-card .feat-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+.premium-feat-card h3 { color: #FFD700; margin-bottom: 0.5rem; }
+.premium-feat-card p { color: #aaa; font-size: 0.9rem; }
+.pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; }
+.price-card { background: #1e1f24; border: 1px solid #333; border-radius: 16px; padding: 2rem; text-align: center; }
+.price-card.featured-price { border-color: #FFD700; background: rgba(255,215,0,0.05); transform: scale(1.05); }
+.price-badge { background: #333; color: #FFD700; padding: 0.3rem 1rem; border-radius: 20px; font-size: 0.8rem; display: inline-block; margin-bottom: 1rem; }
+.price-badge.popular { background: #FFD700; color: #000; }
+.price-amount { font-size: 2.5rem; font-weight: bold; color: #FFD700; }
+.price-period { color: #aaa; margin-bottom: 1rem; }
+.price-features { list-style: none; text-align: right; margin: 1rem 0; }
+.price-features li { padding: 0.3rem 0; color: #ccc; }
+.payment-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
+.payment-card { background: #1e1f24; border: 1px solid #5865F2; border-radius: 16px; padding: 2rem; text-align: center; }
+.payment-icon { font-size: 3rem; margin-bottom: 1rem; }
+.payment-number { background: rgba(88,101,242,0.2); border: 1px solid #5865F2; border-radius: 8px; padding: 0.8rem; font-size: 1.4rem; font-weight: bold; color: #fff; margin: 1rem 0; letter-spacing: 2px; }
+.payment-steps { color: #aaa; text-align: right; line-height: 2; margin: 1rem 0; }
+.btn-payment { display: inline-block; background: #5865F2; color: #fff; padding: 0.8rem 2rem; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 1rem; }
+.btn-payment:hover { background: #4752C4; }
+.premium-guilds-list { display: flex; flex-wrap: wrap; gap: 1rem; }
+.premium-guild-item { background: rgba(255,215,0,0.05); border: 1px solid rgba(255,215,0,0.3); border-radius: 10px; padding: 0.8rem 1.2rem; display: flex; align-items: center; gap: 0.8rem; }
+.pg-icon { width: 36px; height: 36px; border-radius: 50%; }
+.pg-name { color: #fff; font-weight: bold; }
+.pg-badge { background: #FFD700; color: #000; padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+</style>
+
+<script src="/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>one4all - لوحة التحكم</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="dark-bg">
+<%- include('partials/header', { user, botAvatar, isOwner: false }) %>
+
+<main class="landing">
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-glow"></div>
+    <div class="hero-content">
+      <% if (botAvatar) { %>
+        <img src="<%= botAvatar %>" alt="<%= botName %>" class="hero-avatar">
+      <% } else { %>
+        <div class="hero-icon">⚡</div>
+      <% } %>
+      <h1 class="hero-title">مرحباً بك في <span class="gradient-text"><%= botName %></span></h1>
+      <p class="hero-desc">بوت ديسكورد احترافي متكامل مع داشبورد سهل الاستخدام</p>
+      <div class="hero-btns">
+        <% if (user) { %>
+          <a href="/dashboard" class="btn-primary"><i class="fas fa-th-large"></i> إدارة السيرفرات</a>
+        <% } else { %>
+          <a href="/auth/discord" class="btn-primary"><i class="fab fa-discord"></i> تسجيل الدخول بديسكورد</a>
+        <% } %>
+        <a href="https://discord.gg/HC8V8cPF4" target="_blank" class="btn-secondary"><i class="fas fa-headset"></i> سيرفر الدعم</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="stats-section">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">🏠</div>
+        <div class="stat-num" id="statGuilds"><%= stats.guilds.toLocaleString() %></div>
+        <div class="stat-label">سيرفر</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-num"><%= stats.users.toLocaleString() %></div>
+        <div class="stat-label">مستخدم</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📡</div>
+        <div class="stat-num"><%= stats.ping %>ms</div>
+        <div class="stat-label">البينج</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⚡</div>
+        <div class="stat-num">24/7</div>
+        <div class="stat-label">تشغيل</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features-section">
+    <h2 class="section-title">مميزات البوت</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🛡️</div>
+        <h3>حماية متقدمة</h3>
+        <p>حماية شاملة من الكيك والبان والتعديلات الضارة بالسيرفر</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎫</div>
+        <h3>نظام تكت</h3>
+        <p>نظام تذاكر دعم احترافي مع سجلات وأزرار قابلة للتخصيص</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📢</div>
+        <h3>برودكاست</h3>
+        <p>إرسال رسائل جماعية لكل أعضاء السيرفر بكفاءة عالية</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📜</div>
+        <h3>نظام لوج</h3>
+        <p>تسجيل جميع أحداث السيرفر من حذف رسائل وتعديل رتب والمزيد</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📿</div>
+        <h3>أذكار تلقائية</h3>
+        <p>إرسال أذكار إسلامية تلقائياً في أوقات محددة</p>
+      </div>
+      <div class="feature-card premium-feature">
+        <div class="feature-icon">👑</div>
+        <h3>Premium <span class="badge-premium">PREMIUM</span></h3>
+        <p>ميزات حصرية: كشف توكنات، إدارة متقدمة، أولوية الدعم</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <p>صُنع بـ ❤️ بواسطة <strong>king & STEVEN</strong> | one4all Bot © 2024</p>
+</footer>
+
+<script src="/js/main.js"></script>
+</body>
+</html>

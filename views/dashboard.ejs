@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>داشبورد - السيرفرات</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="dark-bg">
+<%- include('partials/header', { user, botAvatar: botAvatar || '', isOwner: isOwner || false }) %>
+
+<main class="dashboard-main">
+  <div class="page-header">
+    <div class="user-welcome">
+      <img src="https://cdn.discordapp.com/avatars/<%= user.id %>/<%= user.avatar %>.png" alt="Avatar" class="welcome-avatar">
+      <div>
+        <h1>مرحباً، <span class="gradient-text"><%= user.username %></span></h1>
+        <p>اختر سيرفراً لإدارته</p>
+      </div>
+    </div>
+    <div class="stats-mini">
+      <span>🏠 <%= stats.guilds %> سيرفر</span>
+      <span>👥 <%= stats.users.toLocaleString() %> عضو</span>
+      <span class="ping-live">📡 <%= stats.ping %>ms</span>
+    </div>
+  </div>
+
+  <div class="guilds-grid">
+    <% guilds.forEach(guild => { %>
+      <div class="guild-card <%= guild.premium ? 'premium-guild' : '' %>">
+        <% if (guild.premium) { %><div class="premium-badge-card">👑 Premium</div><% } %>
+        <img src="<%= guild.icon %>" alt="<%= guild.name %>" class="guild-icon">
+        <h3 class="guild-name"><%= guild.name %></h3>
+        <% if (guild.botIn) { %>
+          <a href="/dashboard/<%= guild.id %>" class="btn-manage">⚙️ إدارة</a>
+        <% } else { %>
+          <a href="/invite/<%= guild.id %>" class="btn-add-bot">➕ إضافة البوت</a>
+        <% } %>
+      </div>
+    <% }) %>
+    <% if (guilds.length === 0) { %>
+      <div class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <h3>لا يوجد سيرفرات</h3>
+        <p>تأكد أن لديك صلاحية الأدمن في سيرفر ما</p>
+      </div>
+    <% } %>
+  </div>
+</main>
+
+<script src="/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>👑 لوحة الأونر</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="dark-bg">
+<%- include('partials/header', { user, botAvatar: botAvatar || '', isOwner: true }) %>
+
+<main class="dashboard-main">
+  <div class="page-header owner-header">
+    <div>
+      <h1>👑 لوحة الأونر</h1>
+      <p>تحكم كامل في البوت وإدارة Premium</p>
+    </div>
+    <div class="owner-badge">
+      <img src="https://cdn.discordapp.com/avatars/<%= user.id %>/<%= user.avatar %>.png" class="welcome-avatar" alt="avatar">
+      <span>مرحباً، <%= user.username %></span>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- Stats -->
+  <div class="stats-grid owner-stats">
+    <div class="stat-card">
+      <div class="stat-icon">🏠</div>
+      <div class="stat-num"><%= stats.guilds %></div>
+      <div class="stat-label">سيرفر</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">👥</div>
+      <div class="stat-num"><%= stats.users.toLocaleString() %></div>
+      <div class="stat-label">مستخدم</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📡</div>
+      <div class="stat-num"><%= stats.ping %>ms</div>
+      <div class="stat-label">البينج</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">👑</div>
+      <div class="stat-num"><%= guilds.filter(g => g.premium).length %></div>
+      <div class="stat-label">Premium</div>
+    </div>
+  </div>
+
+  <!-- Premium Management -->
+  <div class="owner-section">
+    <h2>👑 إدارة Premium</h2>
+    <div class="premium-manage-card">
+      <div class="form-group">
+        <label>🏠 ID السيرفر</label>
+        <input type="text" id="pm_guildId" class="input-field" placeholder="ادخل ID السيرفر...">
+      </div>
+      <div class="form-group">
+        <label>📅 عدد الأيام</label>
+        <input type="number" id="pm_days" class="input-field" value="30" min="1" max="3650">
+      </div>
+      <div class="btn-row">
+        <button onclick="managePremium('add')" class="btn-save">✅ منح Premium</button>
+        <button onclick="managePremium('remove')" class="btn-danger">❌ سحب Premium</button>
+      </div>
+      <div id="premium-result" style="margin-top:10px;font-weight:bold;"></div>
+    </div>
+  </div>
+
+  <!-- All Guilds -->
+  <div class="owner-section">
+    <h2>🏠 جميع السيرفرات (<%= guilds.length %>)</h2>
+    <div class="guilds-grid">
+      <% guilds.forEach(g => { %>
+        <div class="guild-card <%= g.premium ? 'premium-guild' : '' %>">
+          <% if (g.premium) { %><div class="premium-badge-card">👑 Premium<% if(g.premiumExpiry){ %> حتى <%= g.premiumExpiry %><% } %></div><% } %>
+          <img src="<%= g.icon %>" alt="<%= g.name %>" class="guild-icon">
+          <h3 class="guild-name"><%= g.name %></h3>
+          <p class="guild-members"><%= g.memberCount.toLocaleString() %> عضو</p>
+          <code class="guild-id" onclick="copyId('<%= g.id %>')" title="انقر للنسخ"><%= g.id %></code>
+          <div class="btn-row" style="margin-top:8px;">
+            <a href="/dashboard/<%= g.id %>" class="btn-manage">⚙️ إدارة</a>
+            <button onclick="quickPremium('<%= g.id %>','<%= g.name %>',<%= g.premium %>)" class="<%= g.premium ? 'btn-danger' : 'btn-save' %>" style="font-size:12px;">
+              <%= g.premium ? '❌ سحب' : '✅ منح' %>
+            </button>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+</main>
+
+<script>
+async function managePremium(action) {
+  const guildId = document.getElementById('pm_guildId').value.trim();
+  const days = document.getElementById('pm_days').value;
+  if (!guildId) return showToast('أدخل ID السيرفر', 'error');
+
+  const res = await fetch('/api/owner/premium', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ guildId, days, action })
+  });
+  const result = await res.json();
+  showToast(result.success ? result.message : result.error, result.success ? 'success' : 'error');
+  if (result.success) setTimeout(() => location.reload(), 2000);
+}
+
+async function quickPremium(guildId, guildName, hasPremium) {
+  const action = hasPremium ? 'remove' : 'add';
+  const days = hasPremium ? 0 : 30;
+  const confirm_msg = hasPremium ? `سحب Premium من ${guildName}?` : `منح Premium 30 يوم لـ ${guildName}?`;
+  if (!confirm(confirm_msg)) return;
+
+  const res = await fetch('/api/owner/premium', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ guildId, days: days.toString(), action })
+  });
+  const result = await res.json();
+  showToast(result.success ? result.message : result.error, result.success ? 'success' : 'error');
+  if (result.success) setTimeout(() => location.reload(), 1500);
+}
+
+function copyId(id) {
+  navigator.clipboard.writeText(id).then(() => showToast('✅ تم نسخ الـ ID!', 'success'));
+}
+
+function showToast(msg, type = 'success') {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'toast ' + type;
+  setTimeout(() => toast.className = 'toast hidden', 4000);
+}
+</script>
+</body>
+</html>
