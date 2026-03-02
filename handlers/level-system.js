@@ -1,0 +1,89 @@
+// ======================================
+// ====== نظام الليفل والـ XP ===========
+// ======================================
+
+const { EmbedBuilder } = require('discord.js');
+const { Database } = require('st.db');
+
+const levelDB = new Database('./Json-db/Bots/levelDB.json');
+const systemDB = new Database('./Json-db/Bots/systemDB.json');
+
+function xpForLevel(level) {
+  return 100 * (level + 1) * (level + 1);
+}
+
+function getLevelFromXP(xp) {
+  let level = 0;
+  let remaining = xp;
+  while (remaining >= xpForLevel(level)) {
+    remaining -= xpForLevel(level);
+    level++;
+  }
+  return { level, remaining, needed: xpForLevel(level) };
+}
+
+const cooldowns = new Map();
+
+function initLevelSystem(client) {
+  client.on('messageCreate', async (message) => {
+    try {
+      if (message.author.bot || !message.guild) return;
+
+      const guildId = message.guild.id;
+      const enabled = systemDB.get(`level_enabled_${guildId}`);
+      if (!enabled) return;
+
+      const userId = message.author.id;
+      const key = `${guildId}_${userId}`;
+      const now = Date.now();
+
+      if (cooldowns.has(key) && now - cooldowns.get(key) < 60000) return;
+      cooldowns.set(key, now);
+
+      const xpGain = Math.floor(Math.random() * 11) + 15;
+
+      let userData = levelDB.get(key) || { xp: 0, level: 0, messages: 0 };
+      userData.xp += xpGain;
+      userData.messages = (userData.messages || 0) + 1;
+
+      const { level: newLevel } = getLevelFromXP(userData.xp);
+      const oldLevel = userData.level;
+      userData.level = newLevel;
+      levelDB.set(key, userData);
+
+      if (newLevel > oldLevel) {
+        const levelChannelId = systemDB.get(`level_channel_${guildId}`);
+        const channel = levelChannelId
+          ? message.guild.channels.cache.get(levelChannelId)
+          : message.channel;
+        if (!channel) return;
+
+        const embed = new EmbedBuilder()
+          .setColor('#FFD700')
+          .setTitle('🎉 ارتقيت ليفل!')
+          .setDescription(`مبروك <@${userId}>! وصلت للـ **Level ${newLevel}** 🚀`)
+          .setThumbnail(message.author.displayAvatarURL({ extension: 'png', size: 128 }))
+          .addFields(
+            { name: '⭐ الليفل الجديد', value: `**${newLevel}**`, inline: true },
+            { name: '💬 عدد الرسائل', value: `**${userData.messages}**`, inline: true }
+          )
+          .setTimestamp();
+
+        await channel.send({ content: `<@${userId}>`, embeds: [embed] });
+
+        const levelRole = systemDB.get(`level_role_${guildId}_${newLevel}`);
+        if (levelRole) {
+          const role = message.guild.roles.cache.get(levelRole);
+          if (role) await message.member.roles.add(role).catch(() => {});
+        }
+      }
+    } catch (e) {}
+  });
+
+  console.log('✅ Level system loaded');
+}
+
+module.exports = initLevelSystem;
+module.exports.levelDB = levelDB;
+module.exports.getLevelFromXP = getLevelFromXP;
+module.exports.xpForLevel = xpForLevel;
