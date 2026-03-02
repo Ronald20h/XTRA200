@@ -1,0 +1,29 @@
+# ===== BOT SETTINGS =====
+BOT_TOKEN=YOUR_DISCORD_BOT_TOKEN
+PREFIX=!
+OWNER_ID=YOUR_DISCORD_ID
+
+# ===== DISCORD OAUTH2 (للداشبورد) =====
+# اذهب الى: https://discord.com/developers/applications
+# ثم اضغط على تطبيقك > OAuth2
+CLIENT_ID=YOUR_BOT_CLIENT_ID
+CLIENT_SECRET=YOUR_OAUTH2_CLIENT_SECRET
+
+# ===== RAILWAY URL =====
+# بعد رفع المشروع على Railway، ضع رابطه هنا
+# مثال: https://mybot-production.up.railway.app/auth/discord/callback
+CALLBACK_URL=https://YOUR_RAILWAY_APP.up.railway.app/auth/discord/callback
+
+# ===== SESSION =====
+SESSION_SECRET=change_this_to_random_long_string_123456
+
+# ===== PORT (Railway يحدده تلقائياً) =====
+PORT=3000
+
+# ===== DEVELOPER IDs (اختياري) =====
+KING_ID=YOUR_KING_DISCORD_ID
+STEVEN_ID=YOUR_STEVEN_DISCORD_ID
+
+# ===== GROQ AI =====
+# احصل على Key مجاني من: https://console.groq.com
+GROQ_API_KEY=YOUR_GROQ_API_KEY
