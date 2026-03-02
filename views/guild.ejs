@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= guild.name %> - الإعدادات</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="dark-bg">
+<%- include('partials/header', { user, botAvatar: botAvatar || '', isOwner: isOwner || false }) %>
+
+<div class="guild-layout">
+  <aside class="sidebar">
+    <div class="sidebar-guild">
+      <img src="<%= guild.icon %>" alt="<%= guild.name %>" class="sidebar-guild-icon">
+      <div>
+        <h3><%= guild.name %></h3>
+        <p><%= guild.memberCount.toLocaleString() %> عضو</p>
+        <% if (settings.premium) { %><span class="badge-premium">👑 Premium</span><% } %>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="#" class="sidebar-link active" onclick="showTab('general',this)"><i class="fas fa-cog"></i> عام</a>
+      <a href="#" class="sidebar-link" onclick="showTab('commands',this)"><i class="fas fa-terminal"></i> الأوامر</a>
+      <a href="#" class="sidebar-link" onclick="showTab('welcome',this)"><i class="fas fa-door-open"></i> ترحيب</a>
+      <a href="#" class="sidebar-link" onclick="showTab('autoreply',this)"><i class="fas fa-comment-dots"></i> رد تلقائي</a>
+      <a href="#" class="sidebar-link" onclick="showTab('ai',this)"><i class="fas fa-robot"></i> ذكاء اصطناعي</a>
+      <a href="#" class="sidebar-link" onclick="showTab('protection',this)"><i class="fas fa-shield-alt"></i> حماية</a>
+      <a href="#" class="sidebar-link" onclick="showTab('logs',this)"><i class="fas fa-scroll"></i> اللوج</a>
+      <a href="#" class="sidebar-link" onclick="showTab('moderation',this)"><i class="fas fa-gavel"></i> إشراف</a>
+      <a href="#" class="sidebar-link" onclick="showTab('tax',this)"><i class="fas fa-coins"></i> ضريبة</a>
+      <a href="#" class="sidebar-link" onclick="showTab('suggestions',this)"><i class="fas fa-lightbulb"></i> اقتراحات</a>
+      <a href="#" class="sidebar-link" onclick="showTab('feedback',this)"><i class="fas fa-comments"></i> آراء</a>
+      <a href="#" class="sidebar-link" onclick="showTab('azkar',this)"><i class="fas fa-moon"></i> أذكار</a>
+      <a href="#" class="sidebar-link" onclick="showTab('ticket',this)"><i class="fas fa-ticket-alt"></i> تكت</a>
+      <a href="#" class="sidebar-link premium-link" onclick="showTab('premium',this)"><i class="fas fa-crown"></i> Premium</a>
+      <a href="/dashboard" class="sidebar-link back-link"><i class="fas fa-arrow-right"></i> رجوع</a>
+    </nav>
+  </aside>
+
+  <main class="guild-content">
+    <div id="toast" class="toast hidden"></div>
+
+    <!-- TAB: GENERAL -->
+    <div id="tab-general" class="tab-content active">
+      <div class="tab-header"><h2><i class="fas fa-cog"></i> الإعدادات العامة</h2></div>
+      <div class="settings-card">
+        <h3>🔤 البريفكس</h3>
+        <div class="input-row">
+          <input type="text" id="prefix" value="<%= settings.prefix %>" maxlength="5" class="input-field" placeholder="!">
+          <button onclick="saveSection('general',{prefix:document.getElementById('prefix').value})" class="btn-save">💾 حفظ</button>
+        </div>
+      </div>
+      <div class="settings-card">
+        <h3>📊 معلومات السيرفر</h3>
+        <div class="info-grid">
+          <div class="info-item"><span>الاسم</span><strong><%= guild.name %></strong></div>
+          <div class="info-item"><span>الأعضاء</span><strong><%= guild.memberCount.toLocaleString() %></strong></div>
+          <div class="info-item"><span>الرومات</span><strong><%= guild.channels.length %></strong></div>
+          <div class="info-item"><span>الرتب</span><strong><%= guild.roles.length %></strong></div>
+          <div class="info-item"><span>البريميوم</span><strong><%= settings.premium ? '👑 مفعّل' : '❌ غير مفعّل' %></strong></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: COMMANDS -->
+    <div id="tab-commands" class="tab-content">
+      <div class="tab-header">
+        <h2><i class="fas fa-terminal"></i> إعدادات الأوامر</h2>
+        <p class="tab-desc">خصّص الأوامر وأضف اختصارات لكل أمر</p>
+      </div>
+
+      <!-- البريفكس -->
+      <div class="settings-card">
+        <h3>🔤 البريفكس</h3>
+        <p class="settings-desc">البريفكس الحالي: <code id="prefix-display"><%= settings.prefix %></code></p>
+        <div class="input-row">
+          <input type="text" id="cmd_prefix" value="<%= settings.prefix %>" maxlength="5" class="input-field" placeholder="!">
+          <button onclick="saveSection('general',{prefix:document.getElementById('cmd_prefix').value}).then(()=>{document.getElementById('prefix-display').textContent=document.getElementById('cmd_prefix').value})" class="btn-save">💾 حفظ</button>
+        </div>
+      </div>
+
+      <!-- اختصارات الأوامر العامة -->
+      <div class="settings-card">
+        <h3>🔧 اختصارات الأوامر العامة</h3>
+        <p class="settings-desc">حدد اختصاراً لكل أمر - يشتغل مع الأمر الأصلي أو بدله</p>
+        <div class="shortcuts-grid">
+          <% const generalCmds = [
+            {key:'help',    emoji:'📋', desc:'قائمة الأوامر'},
+            {key:'ping',    emoji:'🏓', desc:'سرعة البوت'},
+            {key:'server',  emoji:'🏠', desc:'معلومات السيرفر'},
+            {key:'user',    emoji:'👤', desc:'معلومات عضو'},
+            {key:'avatar',  emoji:'🖼️', desc:'صورة عضو'},
+            {key:'tax',     emoji:'💰', desc:'حساب الضريبة'},
+          ] %>
+          <% generalCmds.forEach(c => { %>
+          <div class="shortcut-item-multi">
+            <div class="shortcut-info">
+              <span class="cmd-emoji"><%= c.emoji %></span>
+              <div>
+                <strong><code><%= settings.prefix %><%= c.key %></code></strong>
+                <small><%= c.desc %></small>
+              </div>
+            </div>
+            <div class="shortcut-aliases">
+              <% for(let i=1; i<=10; i++) { %>
+              <input type="text"
+                id="sc_<%= c.key %>_<%= i %>"
+                value="<%= (settings['sc_'+c.key+'_'+i]) || '' %>"
+                class="alias-input"
+                placeholder="اسم <%= i %>">
+              <% } %>
+            </div>
+          </div>
+          <% }) %>
+        </div>
+        <button onclick="saveAliases(['help','ping','server','user','avatar','tax'])" class="btn-save" style="margin-top:1rem">💾 حفظ أسماء العامة</button>
+      </div>
+
+      <!-- اختصارات أوامر الإشراف -->
+      <div class="settings-card">
+        <h3>⚙️ اختصارات أوامر الإشراف</h3>
+        <p class="settings-desc">اختصارات تشتغل بنفس صلاحيات الأمر الأصلي</p>
+        <div class="shortcuts-grid">
+          <% const modCmds = [
+            {key:'ban',    emoji:'🔨', desc:'حظر عضو'},
+            {key:'unban',  emoji:'🔓', desc:'رفع الحظر'},
+            {key:'kick',   emoji:'👟', desc:'طرد عضو'},
+            {key:'mute',   emoji:'🔇', desc:'تايم أوت'},
+            {key:'unmute', emoji:'🔊', desc:'رفع التايم أوت'},
+            {key:'clear',  emoji:'🗑️', desc:'حذف رسائل'},
+            {key:'lock',   emoji:'🔒', desc:'قفل الروم'},
+            {key:'unlock', emoji:'🔓', desc:'فتح الروم'},
+            {key:'hide',   emoji:'👁️', desc:'إخفاء الروم'},
+            {key:'unhide', emoji:'✅', desc:'إظهار الروم'},
+            {key:'say',    emoji:'💬', desc:'إرسال رسالة'},
+            {key:'come',   emoji:'📩', desc:'استدعاء عضو'},
+          ] %>
+          <% modCmds.forEach(c => { %>
+          <div class="shortcut-item-multi">
+            <div class="shortcut-info">
+              <span class="cmd-emoji"><%= c.emoji %></span>
+              <div>
+                <strong><code><%= settings.prefix %><%= c.key %></code></strong>
+                <small><%= c.desc %></small>
+              </div>
+            </div>
+            <div class="shortcut-aliases">
+              <% for(let i=1; i<=10; i++) { %>
+              <input type="text"
+                id="sc_<%= c.key %>_<%= i %>"
+                value="<%= (settings['sc_'+c.key+'_'+i]) || '' %>"
+                class="alias-input"
+                placeholder="اسم <%= i %>">
+              <% } %>
+            </div>
+          </div>
+          <% }) %>
+        </div>
+        <button onclick="saveAliases(['ban','unban','kick','mute','unmute','clear','lock','unlock','hide','unhide','say','come'])" class="btn-save" style="margin-top:1rem">💾 حفظ أسماء الإشراف</button>
+      </div>
+
+      <!-- أوامر مخصصة -->
+      <div class="settings-card">
+        <h3>✨ أوامر مخصصة</h3>
+        <p class="settings-desc">أضف أوامر خاصة بسيرفرك - لما حد يكتب الأمر البوت يرد برسالة محددة</p>
+        <div class="input-row" style="gap:0.5rem;flex-wrap:wrap">
+          <input type="text" id="custom_cmd" class="input-field" placeholder="اسم الأمر (بدون بريفكس)" style="flex:1;min-width:120px">
+          <input type="text" id="custom_reply" class="input-field" placeholder="الرد..." style="flex:2;min-width:180px">
+          <button onclick="addCustomCmd()" class="btn-save">➕ إضافة</button>
+        </div>
+        <div id="custom-cmds-list" style="margin-top:1rem">
+          <% const customCmds = settings.custom_cmds || []; %>
+          <% if(customCmds.length === 0) { %>
+            <p class="empty-text">لا توجد أوامر مخصصة بعد</p>
+          <% } else { %>
+            <% customCmds.forEach((c,i) => { %>
+            <div class="reply-item" id="cc_<%= i %>">
+              <div class="reply-info">
+                <span class="reply-word"><%= settings.prefix %><%= c.cmd %></span>
+                <span class="reply-arrow">→</span>
+                <span class="reply-text"><%= c.reply %></span>
+              </div>
+              <button onclick="removeCustomCmd('<%= c.cmd %>')" class="btn-sm-danger">🗑️</button>
+            </div>
+            <% }) %>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- إرسال رسالة -->
+      <div class="settings-card">
+        <h3>📤 إرسال رسالة من الداشبورد</h3>
+        <div class="form-group">
+          <label>📢 الروم</label>
+          <select id="test_channel" class="select-field">
+            <% guild.channels.forEach(ch => { %><option value="<%= ch.id %>">#<%= ch.name %></option><% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>💬 الرسالة</label>
+          <input type="text" id="test_message" class="input-field" placeholder="اكتب رسالتك هنا...">
+        </div>
+        <button onclick="doAction('send_message',{channelId:document.getElementById('test_channel').value,message:document.getElementById('test_message').value})" class="btn-save">📤 إرسال</button>
+      </div>
+    </div>
+
+    <!-- TAB: WELCOME -->
+    <div id="tab-welcome" class="tab-content">
+        <p class="tab-desc">يدعم: {user} {username} {server} {count} {id}</p>
+      </div>
+      <div class="settings-card">
+        <h3>🎉 رسالة الترحيب</h3>
+        <div class="form-group">
+          <label>📢 روم الترحيب</label>
+          <select id="welcome_channel" class="select-field">
+            <option value="">-- اختر روم --</option>
+            <% guild.channels.forEach(ch => { %>
+              <option value="<%= ch.id %>" <%= settings.welcome_channel === ch.id ? 'selected' : '' %>>#<%= ch.name %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>💬 رسالة الترحيب</label>
+          <textarea id="welcome_message" class="textarea-field" rows="4" placeholder="مرحباً {user} في {server}!"><%= settings.welcome_message %></textarea>
+        </div>
+        <div class="form-group">
+          <label>🖼️ صورة الترحيب (رابط اختياري)</label>
+          <input type="url" id="welcome_image" value="<%= settings.welcome_image %>" class="input-field" placeholder="https://...">
+        </div>
+        <div class="form-group">
+          <label>🎭 رتبة تلقائية عند الدخول</label>
+          <select id="welcome_role" class="select-field">
+            <option value="">-- بدون رتبة --</option>
+            <% guild.roles.forEach(r => { %>
+              <option value="<%= r.id %>" <%= settings.welcome_role === r.id ? 'selected' : '' %>><%= r.name %></option>
+            <% }) %>
+          </select>
+        </div>
+        <button onclick="saveSection('welcome',{
+          welcome_channel: document.getElementById('welcome_channel').value,
+          welcome_message: document.getElementById('welcome_message').value,
+          welcome_image: document.getElementById('welcome_image').value,
+          welcome_role: document.getElementById('welcome_role').value
+        })" class="btn-save">💾 حفظ إعدادات الترحيب</button>
+      </div>
+      <div class="settings-card">
+        <h3>👋 رسالة الوداع</h3>
+        <div class="form-group">
+          <label>📢 روم الوداع</label>
+          <select id="leave_channel" class="select-field">
+            <option value="">-- بدون --</option>
+            <% guild.channels.forEach(ch => { %>
+              <option value="<%= ch.id %>" <%= settings.leave_channel === ch.id ? 'selected' : '' %>>#<%= ch.name %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>💬 رسالة الوداع</label>
+          <textarea id="leave_message" class="textarea-field" rows="3" placeholder="وداعاً {username}!"><%= settings.leave_message %></textarea>
+        </div>
+        <button onclick="saveSection('welcome',{
+          leave_channel: document.getElementById('leave_channel').value,
+          leave_message: document.getElementById('leave_message').value
+        })" class="btn-save">💾 حفظ إعدادات الوداع</button>
+      </div>
+    </div>
+
+    <!-- TAB: AUTO-REPLY -->
+    <div id="tab-autoreply" class="tab-content">
+      <div class="tab-header"><h2><i class="fas fa-comment-dots"></i> نظام الرد التلقائي</h2></div>
+      <div class="settings-card">
+        <h3>➕ إضافة رد تلقائي</h3>
+        <div class="form-group">
+          <label>🔤 الكلمة / الجملة</label>
+          <input type="text" id="ar_word" class="input-field" placeholder="مثال: مرحبا">
+        </div>
+        <div class="form-group">
+          <label>💬 الرد</label>
+          <input type="text" id="ar_reply" class="input-field" placeholder="مثال: وعليكم السلام!">
+        </div>
+        <button onclick="addAutoReply()" class="btn-save">➕ إضافة</button>
+      </div>
+      <div class="settings-card">
+        <h3>📋 الردود الحالية (<span id="reply-count"><%= settings.auto_replys.length %></span>)</h3>
+        <div id="replies-list">
+          <% if (settings.auto_replys.length === 0) { %>
+            <p class="empty-text">لا يوجد ردود تلقائية بعد. أضف أول رد!</p>
+          <% } else { %>
+            <% settings.auto_replys.forEach(r => { %>
+              <div class="reply-item" id="reply-<%= r.word %>">
+                <div class="reply-info">
+                  <span class="reply-word">🔤 "<%= r.word %>"</span>
+                  <span class="reply-arrow">→</span>
+                  <span class="reply-text"><%= r.reply %></span>
+                </div>
+                <button onclick="removeAutoReply('<%= r.word.replace(/'/g, "\\'") %>')" class="btn-sm-danger">🗑️</button>
+              </div>
+            <% }) %>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: AI -->
+    <div id="tab-ai" class="tab-content">
+      <div class="tab-header">
+        <h2><i class="fas fa-robot"></i> الذكاء الاصطناعي</h2>
+        <p class="tab-desc">خصص روماً يرد فيه البوت بالذكاء الاصطناعي على الرسائل</p>
+      </div>
+      <div class="settings-card">
+        <h3>🤖 إعداد روم الذكاء الاصطناعي</h3>
+        <div class="form-group">
+          <label>📢 روم الذكاء الاصطناعي</label>
+          <select id="ai_channel" class="select-field">
+            <option value="">-- اختر روم --</option>
+            <% guild.channels.forEach(ch => { %>
+              <option value="<%= ch.id %>" <%= settings.ai_channel === ch.id ? 'selected' : '' %>>#<%= ch.name %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="toggle-item">
+          <div class="toggle-info">
+            <span class="toggle-icon">🤖</span>
+            <div>
+              <strong>تفعيل الذكاء الاصطناعي</strong>
+              <small>البوت سيرد تلقائياً على كل رسائل الروم المحدد</small>
+            </div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="ai_enabled" <%= settings.ai_enabled ? 'checked' : '' %>>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <button onclick="saveSection('ai',{
+          ai_channel: document.getElementById('ai_channel').value,
+          ai_enabled: document.getElementById('ai_enabled').checked
+        })" class="btn-save mt-4">💾 حفظ إعدادات الذكاء الاصطناعي</button>
+      </div>
+      <div class="settings-card">
+        <h3>ℹ️ معلومات</h3>
+        <p>• البوت سيرد على <strong>كل رسالة</strong> في الروم المحدد</p>
+        <p>• يمكن أيضاً إعداده بالأمر <code>/setup-ai</code></p>
+        <p>• الردود باللغة العربية بشكل افتراضي</p>
+      </div>
+    </div>
+
+    <!-- TAB: PROTECTION -->
+    <div id="tab-protection" class="tab-content">
+      <div class="tab-header">
+        <h2><i class="fas fa-shield-alt"></i> نظام الحماية</h2>
+        <p class="tab-desc">⚠️ تأكد أن رتبة البوت أعلى رتبة في السيرفر</p>
+      </div>
+      <div class="settings-card">
+        <h3>🔧 روم سجل الحماية</h3>
+        <select id="protect_log" class="select-field">
+          <option value="">-- بدون سجل --</option>
+          <% guild.channels.forEach(ch => { %>
+            <option value="<%= ch.id %>" <%= settings.protect_log === ch.id ? 'selected' : '' %>>#<%= ch.name %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="settings-card">
+        <h3>🛡️ أنظمة الحماية</h3>
+        <div class="toggles-grid">
+          <% const protections = [
+            {id:'anti_server_edit', icon:'🏠', label:'حماية السيرفر', desc:'منع تغيير اسم/صورة السيرفر'},
+            {id:'anti_channel_edit', icon:'📁', label:'حماية الرومات', desc:'منع حذف/تعديل الرومات'},
+            {id:'anti_channel_create', icon:'🚫', label:'منع إنشاء رومات', desc:'باند من ينشئ روم'},
+            {id:'anti_role_create', icon:'🎭', label:'منع إنشاء رتب', desc:'باند من ينشئ رتبة'},
+            {id:'anti_role_edit', icon:'✏️', label:'حماية تعديل الرتب', desc:'منع تغيير صلاحيات الرتب'},
+            {id:'anti_kick', icon:'👟', label:'منع الكيك الجماعي', desc:'باند من يكيك أكثر من 3'},
+            {id:'anti_ban', icon:'🔨', label:'منع البان الجماعي', desc:'باند من يبان أكثر من 3'},
+            {id:'anti_bots', icon:'🤖', label:'منع إضافة بوتات', desc:'طرد أي بوت يُضاف'},
+            {id:'anti_webhook', icon:'🪝', label:'منع الويب هوكس', desc:'حذف أي webhook يُنشأ'},
+          ] %>
+          <% protections.forEach(p => { %>
+            <div class="toggle-item">
+              <div class="toggle-info">
+                <span class="toggle-icon"><%= p.icon %></span>
+                <div>
+                  <strong><%= p.label %></strong>
+                  <small><%= p.desc %></small>
+                </div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="<%= p.id %>" <%= settings[p.id] ? 'checked' : '' %>>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          <% }) %>
+        </div>
+        <button onclick="saveProtection()" class="btn-save mt-4">💾 حفظ إعدادات الحماية</button>
+      </div>
+    </div>
+
+    <!-- TAB: LOGS -->
+    <div id="tab-logs" class="tab-content">
+      <div class="tab-header">
+        <h2><i class="fas fa-scroll"></i> سجلات اللوج</h2>
+      </div>
+      <div class="settings-card">
+        <div class="logs-grid">
+          <% const logTypes = [
+            {key:'messagedelete',label:'حذف رسائل',icon:'🗑️'},
+            {key:'messageupdate',label:'تعديل رسائل',icon:'✏️'},
+            {key:'rolecreate',label:'إنشاء رتبة',icon:'🆕'},
+            {key:'roledelete',label:'حذف رتبة',icon:'❌'},
+            {key:'rolegive',label:'إعطاء رتبة',icon:'✅'},
+            {key:'roleremove',label:'إزالة رتبة',icon:'➖'},
+            {key:'channelcreate',label:'إنشاء روم',icon:'📢'},
+            {key:'channeldelete',label:'حذف روم',icon:'🗑️'},
+            {key:'banadd',label:'باند عضو',icon:'🔨'},
+            {key:'bandelete',label:'رفع باند',icon:'🔓'},
+            {key:'kickadd',label:'كيك عضو',icon:'👟'},
+            {key:'botadd',label:'إضافة بوت',icon:'🤖'},
+          ] %>
+          <% logTypes.forEach(lt => { %>
+            <div class="log-item">
+              <label><%= lt.icon %> <%= lt.label %></label>
+              <select id="log_<%= lt.key %>" class="select-field-sm">
+                <option value="">-- بدون --</option>
+                <% guild.channels.forEach(ch => { %>
+                  <option value="<%= ch.id %>" <%= settings['log_'+lt.key] === ch.id ? 'selected' : '' %>>#<%= ch.name %></option>
+                <% }) %>
+              </select>
+            </div>
+          <% }) %>
+        </div>
+        <button onclick="saveLogs()" class="btn-save mt-4">💾 حفظ سجلات اللوج</button>
+      </div>
+    </div>
+
+    <!-- TAB: MODERATION -->
+    <div id="tab-moderation" class="tab-content">
+      <div class="tab-header"><h2><i class="fas fa-gavel"></i> إدارة وإشراف</h2></div>
+
+      <div class="settings-card">
+        <h3>📢 إرسال رسالة</h3>
+        <div class="form-group">
+          <label>الروم</label>
+          <select id="send_channel" class="select-field">
+            <% guild.channels.forEach(ch => { %><option value="<%= ch.id %>">#<%= ch.name %></option><% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>الرسالة</label>
+          <textarea id="send_message" class="textarea-field" placeholder="اكتب رسالتك هنا..."></textarea>
+        </div>
+        <button onclick="doAction('send_message',{channelId:document.getElementById('send_channel').value,message:document.getElementById('send_message').value})" class="btn-save">📤 إرسال</button>
+      </div>
+
+      <div class="settings-card <%= settings.premium ? '' : 'premium-card' %>">
+        <% if (!settings.premium) { %><div class="premium-overlay-card">👑 Premium مطلوب</div><% } %>
+        <h3>🔨 باند عضو</h3>
+        <div class="form-group"><label>ID العضو</label><input type="text" id="ban_user" class="input-field" placeholder="123456789..."></div>
+        <div class="form-group"><label>السبب</label><input type="text" id="ban_reason" class="input-field" placeholder="سبب الباند"></div>
+        <button onclick="doAction('ban_user',{userId:document.getElementById('ban_user').value,reason:document.getElementById('ban_reason').value})" class="btn-danger">🔨 باند</button>
+      </div>
+
+      <div class="settings-card <%= settings.premium ? '' : 'premium-card' %>">
+        <% if (!settings.premium) { %><div class="premium-overlay-card">👑 Premium مطلوب</div><% } %>
+        <h3>👟 كيك عضو</h3>
+        <div class="form-group"><label>ID العضو</label><input type="text" id="kick_user" class="input-field" placeholder="123456789..."></div>
+        <div class="form-group"><label>السبب</label><input type="text" id="kick_reason" class="input-field" placeholder="سبب الكيك"></div>
+        <button onclick="doAction('kick_user',{userId:document.getElementById('kick_user').value,reason:document.getElementById('kick_reason').value})" class="btn-danger">👟 كيك</button>
+      </div>
+
+      <div class="settings-card <%= settings.premium ? '' : 'premium-card' %>">
+        <% if (!settings.premium) { %><div class="premium-overlay-card">👑 Premium مطلوب</div><% } %>
+        <h3>🔓 رفع باند</h3>
+        <div class="form-group"><label>ID العضو</label><input type="text" id="unban_user" class="input-field" placeholder="123456789..."></div>
+        <button onclick="doAction('unban_user',{userId:document.getElementById('unban_user').value})" class="btn-save">🔓 رفع الباند</button>
+      </div>
+
+      <div class="settings-card">
+        <h3>🔒 قفل / فتح روم</h3>
+        <div class="form-group">
+          <label>الروم</label>
+          <select id="mod_channel" class="select-field">
+            <% guild.channels.forEach(ch => { %><option value="<%= ch.id %>">#<%= ch.name %></option><% }) %>
+          </select>
+        </div>
+        <div class="btn-row">
+          <button onclick="doAction('lock_channel',{channelId:document.getElementById('mod_channel').value})" class="btn-danger">🔒 قفل</button>
+          <button onclick="doAction('unlock_channel',{channelId:document.getElementById('mod_channel').value})" class="btn-save">🔓 فتح</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: TAX -->
+    <div id="tab-tax" class="tab-content">
+      <div class="tab-header"><h2><i class="fas fa-coins"></i> نظام الضريبة</h2></div>
+      <div class="settings-card">
+        <div class="form-group">
+          <label>💰 روم الضريبة التلقائية</label>
+          <select id="tax_room" class="select-field">
+            <option value="">-- بدون --</option>
+            <% guild.channels.forEach(ch => { %><option value="<%= ch.id %>" <%= settings.tax_room === ch.id ? 'selected' : '' %>>#<%= ch.name %></option><% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>🎨 شكل العرض</label>
+          <select id="tax_mode" class="select-field">
+            <option value="embed" <%= settings.tax_mode==='embed'?'selected':'' %>>Embed</option>
+            <option value="text" <%= settings.tax_mode==='text'?'selected':'' %>>نص عادي</option>
+          </select>
+        </div>
+        <button onclick="saveSection('tax',{tax_room:document.getElementById('tax_room').value,tax_mode:document.getElementById('tax_mode').value})" class="btn-save">💾 حفظ</button>
+      </div>
+    </div>
+
+    <!-- TAB: SUGGESTIONS -->
+    <div id="tab-suggestions" class="tab-content">
+      <div class="tab-header"><h2><i class="fas fa-lightbulb"></i> نظام الاقتراحات</h2></div>
+      <div class="settings-card">
+        <div class="form-group">
+          <label>💡 روم الاقتراحات</label>
+          <select id="suggestions_room" class="select-field">
+            <option value="">-- بدون --</option>
+            <% guild.channels.forEach(ch => { %><option value="<%= ch.id %>" <%= settings.suggestions_room===ch.id?'selected':'' %>>#<%= ch.name %></option><% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>🎨 نوع التفاعل</label>
+          <select id="suggestion_mode" class="select-field">
+            <option value="buttons" <%= settings.suggestion_mode==='buttons'?'selected':'' %>>أزرار</option>
+            <option value="reactions" <%= settings.suggestion_mode==='reactions'?'selected':'' %>>تفاعلات</option>
+          </select>
+        </div>
+        <button onclick="saveSection('suggestions',{suggestions_room:document.getElementById('suggestions_room').value,suggestion_mode:document.getElementById('suggestion_mode').value})" class="btn-save">💾 حفظ</button>
+      </div>
+    </div>
+
+    <!-- TAB: FEEDBACK -->
+    <div id="tab-feedback" class="tab-content">
+      <div class="tab-header"><h2><i class="fas fa-comments"></i> نظام الآراء</h2></div>
+      <div class="settings-card">
+        <div class="form-group">
+          <label>💭 روم الآراء</label>
+          <select id="feedback_room" class="select-field">
+            <option value="">-- بدون --</option>
+            <% guild.channels.forEach(ch => { %><option value="<%= ch.id %>" <%= settings.feedback_room===ch.id?'selected':'' %>>#<%= ch.name %></option><% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>🎨 نوع الرد</label>
+          <select id="feedback_mode" class="select-field">
+            <option value="embed" <%= settings.feedback_mode==='embed'?'selected':'' %>>Embed</option>
+            <option value="reactions" <%= settings.feedback_mode==='reactions'?'selected':'' %>>تفاعلات</option>
+          </select>
+        </div>
+        <button onclick="saveSection('feedback',{feedback_room:document.getElementById('feedback_room').value,feedback_mode:document.getElementById('feedback_mode').value})" class="btn-save">💾 حفظ</button>
+      </div>
+    </div>
+
+    <!-- TAB: AZKAR -->
+    <div id="tab-azkar" class="tab-content">
+      <div class="tab-header"><h2><i class="fas fa-moon"></i> نظام الأذكار</h2></div>
+      <div class="settings-card">
+        <div class="form-group">
+          <label>📢 روم الأذكار</label>
+          <select id="azkar_channel" class="select-field">
+            <option value="">-- بدون --</option>
+            <% guild.channels.forEach(ch => { %><option value="<%= ch.id %>" <%= settings.azkar_channel===ch.id?'selected':'' %>>#<%= ch.name %></option><% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>⏱️ كل كم دقيقة؟</label>
+          <input type="number" id="azkar_interval" value="<%= settings.azkar_interval %>" min="10" max="1440" class="input-field">
+        </div>
+        <div class="toggle-item">
+          <div class="toggle-info">
+            <span class="toggle-icon">📿</span>
+            <div><strong>تفعيل الأذكار التلقائية</strong></div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="azkar_enabled" <%= settings.azkar_enabled?'checked':'' %>>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <button onclick="saveSection('azkar',{azkar_channel:document.getElementById('azkar_channel').value,azkar_interval:document.getElementById('azkar_interval').value,azkar_enabled:document.getElementById('azkar_enabled').checked})" class="btn-save mt-4">💾 حفظ</button>
+      </div>
+    </div>
+
+    <!-- TAB: TICKET -->
+    <div id="tab-ticket" class="tab-content">
+      <div class="tab-header"><h2><i class="fas fa-ticket-alt"></i> نظام التكتات</h2></div>
+
+      <div class="settings-card">
+        <h3>🎫 إعداد التكت</h3>
+        <p style="color:#aaa;margin-bottom:1rem">لإنشاء نظام التكت استخدم أمر <code>/setup-ticket</code> في السيرفر مباشرة</p>
+        <div class="form-group">
+          <label>📋 روم سجل التكت (Log Room)</label>
+          <select id="ticket_log" class="select-field">
+            <option value="">-- بدون --</option>
+            <% guild.channels.forEach(ch => { %><option value="<%= ch.id %>" <%= settings.ticket_log === ch.id ? 'selected' : '' %>>#<%= ch.name %></option><% }) %>
+          </select>
+        </div>
+        <button onclick="saveSection('ticket',{ticket_log:document.getElementById('ticket_log').value})" class="btn-save">💾 حفظ</button>
+      </div>
+
+      <div class="settings-card">
+        <h3>📊 أوامر التكت</h3>
+        <div class="cmds-grid">
+          <div class="cmd-item"><code>/setup-ticket</code><span>إعداد نظام التكت الرئيسي</span></div>
+          <div class="cmd-item"><code>/add-ticket-button</code><span>إضافة زر تكت إضافي</span></div>
+          <div class="cmd-item"><code>/to-select</code><span>تحويل الأزرار لقائمة منسدلة</span></div>
+          <div class="cmd-item"><code>/set-ticket-log</code><span>تحديد روم سجل التكت</span></div>
+          <div class="cmd-item"><code>/add-user</code><span>إضافة مستخدم للتكت</span></div>
+          <div class="cmd-item"><code>/remove-user</code><span>إزالة مستخدم من التكت</span></div>
+          <div class="cmd-item"><code>/close</code><span>إغلاق التكت</span></div>
+          <div class="cmd-item"><code>/delete</code><span>حذف التكت نهائياً</span></div>
+          <div class="cmd-item"><code>/rename</code><span>تغيير اسم التكت</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: PREMIUM -->
+    <div id="tab-premium" class="tab-content">
+      <div class="tab-header"><h2><i class="fas fa-crown"></i> Premium</h2></div>
+      <% if (settings.premium) { %>
+        <div class="premium-active-card">
+          <div class="premium-crown">👑</div>
+          <h3>هذا السيرفر Premium!</h3>
+          <p>تمتع بجميع الميزات الحصرية بدون قيود</p>
+          <div class="premium-features">
+            <div class="premium-feature-item">✅ باند/كيك من الداشبورد</div>
+            <div class="premium-feature-item">✅ إدارة متقدمة</div>
+            <div class="premium-feature-item">✅ أولوية الدعم</div>
+          </div>
+        </div>
+      <% } else { %>
+        <div class="premium-upgrade-card">
+          <div class="premium-crown">👑</div>
+          <h3>احصل على Premium</h3>
+          <div class="premium-features">
+            <div class="premium-feature-item">🔨 باند/كيك من الداشبورد</div>
+            <div class="premium-feature-item">📊 إحصائيات متقدمة</div>
+            <div class="premium-feature-item">⚡ أولوية الدعم</div>
+          </div>
+          <a href="https://discord.gg/HC8V8cPF4" target="_blank" class="btn-premium-upgrade">تواصل معنا للحصول على Premium</a>
+        </div>
+      <% } %>
+    </div>
+  </main>
+</div>
+
+<script>
+const GUILD_ID = '<%= guild.id %>';
+const PREFIX = '<%= settings.prefix %>';
+
+function showTab(tab, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+  const tabEl = document.getElementById('tab-' + tab);
+  if (tabEl) tabEl.classList.add('active');
+  if (el) el.classList.add('active');
+}
+function showToast(msg, type = 'success') {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'toast ' + type;
+  setTimeout(() => toast.className = 'toast hidden', 3500);
+}
+
+// ====== حفظ 10 أسماء لكل أمر ======
+async function saveAliases(keys) {
+  const data = {};
+  keys.forEach(k => {
+    for (let i = 1; i <= 10; i++) {
+      const val = document.getElementById(`sc_${k}_${i}`)?.value?.trim();
+      data[`sc_${k}_${i}`] = val || '';
+    }
+  });
+  await saveSection('shortcuts', data);
+}
+
+// ====== أوامر مخصصة ======
+async function addCustomCmd() {
+  const cmd   = document.getElementById('custom_cmd').value.trim().replace(/\s+/g,'');
+  const reply = document.getElementById('custom_reply').value.trim();
+  if (!cmd || !reply) return showToast('❌ أدخل اسم الأمر والرد', 'error');
+  const res = await saveSection('custom_cmds', { action: 'add', cmd, reply });
+  if (res?.success) {
+    document.getElementById('custom_cmd').value = '';
+    document.getElementById('custom_reply').value = '';
+    const list = document.getElementById('custom-cmds-list');
+    const empty = list.querySelector('.empty-text');
+    if (empty) empty.remove();
+    const el = document.createElement('div');
+    el.className = 'reply-item';
+    el.id = 'cc_' + cmd;
+    el.innerHTML = `<div class="reply-info"><span class="reply-word">${PREFIX}${cmd}</span><span class="reply-arrow">→</span><span class="reply-text">${reply}</span></div><button onclick="removeCustomCmd('${cmd}')" class="btn-sm-danger">🗑️</button>`;
+    list.appendChild(el);
+  }
+}
+
+async function removeCustomCmd(cmd) {
+  const res = await saveSection('custom_cmds', { action: 'remove', cmd });
+  if (res?.success) {
+    const el = document.getElementById('cc_' + cmd);
+    if (el) el.remove();
+  }
+}
+
+async function saveSection(section, data) {
+  try {
+    const res = await fetch(`/api/guild/${GUILD_ID}/settings`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ section, data })
+    });
+    const result = await res.json();
+    if (result.success) showToast(result.message, 'success');
+    else showToast(result.error || 'خطأ!', 'error');
+  } catch (e) { showToast('خطأ في الاتصال!', 'error'); }
+}
+
+function saveProtection() {
+  saveSection('protection', {
+    anti_server_edit: document.getElementById('anti_server_edit').checked,
+    anti_channel_edit: document.getElementById('anti_channel_edit').checked,
+    anti_channel_create: document.getElementById('anti_channel_create').checked,
+    anti_role_create: document.getElementById('anti_role_create').checked,
+    anti_role_edit: document.getElementById('anti_role_edit').checked,
+    anti_kick: document.getElementById('anti_kick').checked,
+    anti_bots: document.getElementById('anti_bots').checked,
+    anti_ban: document.getElementById('anti_ban').checked,
+    anti_webhook: document.getElementById('anti_webhook').checked,
+    protect_log: document.getElementById('protect_log').value
+  });
+}
+
+function saveLogs() {
+  const logKeys = ['messagedelete','messageupdate','rolecreate','roledelete','rolegive','roleremove','channelcreate','channeldelete','banadd','bandelete','kickadd','botadd'];
+  const data = {};
+  logKeys.forEach(k => { const el = document.getElementById('log_'+k); if(el) data['log_'+k] = el.value; });
+  saveSection('logs', data);
+}
+
+async function doAction(action, data) {
+  try {
+    const res = await fetch(`/api/guild/${GUILD_ID}/action`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ action, data })
+    });
+    const result = await res.json();
+    if (result.success) showToast(result.message, 'success');
+    else showToast(result.error || 'خطأ!', 'error');
+  } catch (e) { showToast('خطأ في الاتصال!', 'error'); }
+}
+
+// Auto-Reply
+async function addAutoReply() {
+  const word = document.getElementById('ar_word').value.trim();
+  const reply = document.getElementById('ar_reply').value.trim();
+  if (!word || !reply) return showToast('أدخل الكلمة والرد!', 'error');
+
+  try {
+    const res = await fetch(`/api/guild/${GUILD_ID}/settings`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ section: 'autoreply', data: { action: 'add', word, reply } })
+    });
+    const result = await res.json();
+    if (result.success) {
+      showToast('✅ تم إضافة الرد التلقائي!', 'success');
+      // Add to list UI
+      const list = document.getElementById('replies-list');
+      const emptyText = list.querySelector('.empty-text');
+      if (emptyText) emptyText.remove();
+      const div = document.createElement('div');
+      div.className = 'reply-item';
+      div.id = 'reply-' + word;
+      div.innerHTML = `<div class="reply-info"><span class="reply-word">🔤 "${word}"</span><span class="reply-arrow">→</span><span class="reply-text">${reply}</span></div><button onclick="removeAutoReply('${word.replace(/'/g, "\\'")}')" class="btn-sm-danger">🗑️</button>`;
+      list.appendChild(div);
+      const count = document.getElementById('reply-count');
+      count.textContent = parseInt(count.textContent) + 1;
+      document.getElementById('ar_word').value = '';
+      document.getElementById('ar_reply').value = '';
+    } else {
+      showToast(result.error || 'خطأ!', 'error');
+    }
+  } catch(e) { showToast('خطأ في الاتصال!', 'error'); }
+}
+
+async function removeAutoReply(word) {
+  try {
+    const res = await fetch(`/api/guild/${GUILD_ID}/settings`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ section: 'autoreply', data: { action: 'remove', word } })
+    });
+    const result = await res.json();
+    if (result.success) {
+      showToast('✅ تم حذف الرد!', 'success');
+      const el = document.getElementById('reply-' + word);
+      if (el) el.remove();
+      const count = document.getElementById('reply-count');
+      count.textContent = Math.max(0, parseInt(count.textContent) - 1);
+    } else { showToast(result.error || 'خطأ!', 'error'); }
+  } catch(e) { showToast('خطأ في الاتصال!', 'error'); }
+}
+</script>
+</body>
+</html>

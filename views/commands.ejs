@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الأوامر - Xtra System</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .commands-page { max-width: 1100px; margin: 0 auto; padding: 2rem 1rem; }
+    .commands-hero { text-align: center; padding: 2.5rem 1rem 2rem; }
+    .commands-hero h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    .commands-hero p { color: #aaa; font-size: 1rem; }
+
+    /* Search */
+    .search-bar { display: flex; justify-content: center; margin: 1.5rem 0; }
+    .search-input { width: 100%; max-width: 500px; padding: 0.8rem 1.2rem; border-radius: 12px; border: 1px solid #333; background: #1e1f24; color: #fff; font-size: 1rem; outline: none; }
+    .search-input:focus { border-color: #5865F2; }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; margin-bottom: 2rem; }
+    .tab-btn { padding: 0.6rem 1.4rem; border-radius: 30px; border: 1px solid #333; background: #1e1f24; color: #aaa; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
+    .tab-btn:hover, .tab-btn.active { background: #5865F2; border-color: #5865F2; color: #fff; }
+    .tab-btn.active { font-weight: bold; }
+
+    /* Stats bar */
+    .commands-stats { display: flex; gap: 1rem; justify-content: center; margin-bottom: 2rem; flex-wrap: wrap; }
+    .cmd-stat { background: #1e1f24; border: 1px solid #333; border-radius: 10px; padding: 0.6rem 1.4rem; font-size: 0.9rem; color: #aaa; }
+    .cmd-stat span { color: #5865F2; font-weight: bold; }
+
+    /* Commands Grid */
+    .commands-section { display: none; }
+    .commands-section.active { display: block; }
+    .category-title { font-size: 1.2rem; font-weight: bold; color: #fff; margin: 1.5rem 0 1rem; padding-right: 0.5rem; border-right: 3px solid #5865F2; }
+    .commands-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .cmd-card { background: #1e1f24; border: 1px solid #2a2b30; border-radius: 12px; padding: 1.1rem 1.3rem; display: flex; gap: 1rem; align-items: flex-start; transition: border-color 0.2s; }
+    .cmd-card:hover { border-color: #5865F2; }
+    .cmd-card.hidden { display: none; }
+    .cmd-icon { font-size: 1.5rem; flex-shrink: 0; width: 40px; text-align: center; }
+    .cmd-info { flex: 1; }
+    .cmd-name { color: #5865F2; font-weight: bold; font-size: 0.95rem; margin-bottom: 0.3rem; font-family: monospace; }
+    .cmd-desc { color: #aaa; font-size: 0.85rem; line-height: 1.5; }
+    .cmd-badge { display: inline-block; font-size: 0.7rem; padding: 0.15rem 0.6rem; border-radius: 20px; margin-top: 0.4rem; }
+    .badge-admin { background: rgba(237,66,69,0.15); color: #ED4245; border: 1px solid rgba(237,66,69,0.3); }
+    .badge-general { background: rgba(88,101,242,0.15); color: #5865F2; border: 1px solid rgba(88,101,242,0.3); }
+    .badge-premium { background: rgba(255,215,0,0.15); color: #FFD700; border: 1px solid rgba(255,215,0,0.3); }
+
+    /* No results */
+    .no-results { text-align: center; color: #aaa; padding: 3rem; display: none; }
+    .no-results.show { display: block; }
+  </style>
+</head>
+<body class="dark-bg">
+<%- include('partials/header', { user: typeof user !== 'undefined' ? user : null, botAvatar: '', isOwner: false }) %>
+
+<main class="commands-page">
+  <div class="commands-hero">
+    <h1>📋 <span class="gradient-text">قائمة الأوامر</span></h1>
+    <p>جميع أوامر بوت Xtra System - ابحث عن أي أمر بسهولة</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="commands-stats">
+    <div class="cmd-stat">إجمالي الأوامر: <span>100+</span></div>
+    <div class="cmd-stat">أوامر عامة: <span>15</span></div>
+    <div class="cmd-stat">أوامر إشراف: <span>20+</span></div>
+    <div class="cmd-stat">حماية: <span>13</span></div>
+    <div class="cmd-stat">تكت: <span>9</span></div>
+  </div>
+
+  <!-- Search -->
+  <div class="search-bar">
+    <input class="search-input" id="searchInput" type="text" placeholder="🔍 ابحث عن أمر..." oninput="searchCommands()">
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('all')">🌟 الكل</button>
+    <button class="tab-btn" onclick="showTab('general')">💬 العامة</button>
+    <button class="tab-btn" onclick="showTab('moderation')">🛡️ الإشراف</button>
+    <button class="tab-btn" onclick="showTab('autoreply')">🤖 الرد التلقائي</button>
+    <button class="tab-btn" onclick="showTab('protection')">🔒 الحماية</button>
+    <button class="tab-btn" onclick="showTab('ticket')">🎫 التكت</button>
+    <button class="tab-btn" onclick="showTab('levels')">⭐ الليفل</button>
+    <button class="tab-btn" onclick="showTab('utility')">⚙️ الأدوات</button>
+  </div>
+
+  <div class="no-results" id="noResults">😔 لا يوجد أوامر بهذا الاسم</div>
+
+  <!-- ALL -->
+  <div class="commands-section active" id="tab-all">
+
+    <!-- العامة -->
+    <div class="category-title">💬 الأوامر العامة</div>
+    <div class="commands-grid" id="general-grid">
+      <div class="cmd-card" data-name="ping" data-section="general">
+        <div class="cmd-icon">🏓</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/ping</div>
+          <div class="cmd-desc">عرض سرعة البوت وقت التشغيل وعدد السيرفرات</div>
+          <span class="cmd-badge badge-general">عام</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="help" data-section="general">
+        <div class="cmd-icon">📋</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/help</div>
+          <div class="cmd-desc">قائمة أوامر البوت الكاملة</div>
+          <span class="cmd-badge badge-general">عام</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="user" data-section="general">
+        <div class="cmd-icon">👤</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/user</div>
+          <div class="cmd-desc">عرض معلومات حسابك أو حساب شخص آخر</div>
+          <span class="cmd-badge badge-general">عام</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="avatar" data-section="general">
+        <div class="cmd-icon">🖼️</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/avatar</div>
+          <div class="cmd-desc">عرض صورتك أو صورة شخص آخر</div>
+          <span class="cmd-badge badge-general">عام</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="banner" data-section="general">
+        <div class="cmd-icon">🎨</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/banner</div>
+          <div class="cmd-desc">عرض بانرك أو بانر شخص آخر</div>
+          <span class="cmd-badge badge-general">عام</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="server" data-section="general">
+        <div class="cmd-icon">🏠</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/server</div>
+          <div class="cmd-desc">عرض معلومات السيرفر الكاملة</div>
+          <span class="cmd-badge badge-general">عام</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="roles" data-section="general">
+        <div class="cmd-icon">🎭</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/roles</div>
+          <div class="cmd-desc">الاستعلام عن رتب السيرفر</div>
+          <span class="cmd-badge badge-general">عام</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="decorate" data-section="general">
+        <div class="cmd-icon">✨</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/decorate</div>
+          <div class="cmd-desc">زخرفة النصوص بأشكال مختلفة وجميلة</div>
+          <span class="cmd-badge badge-general">عام</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="rank" data-section="general">
+        <div class="cmd-icon">📊</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/rank</div>
+          <div class="cmd-desc">عرض ليفلك وXP وترتيبك في السيرفر</div>
+          <span class="cmd-badge badge-general">عام</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="leaderboard" data-section="general">
+        <div class="cmd-icon">🏆</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/leaderboard</div>
+          <div class="cmd-desc">لوحة المتصدرين في الليفل</div>
+          <span class="cmd-badge badge-general">عام</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="bot-stats" data-section="general">
+        <div class="cmd-icon">📈</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/bot-stats</div>
+          <div class="cmd-desc">إحصائيات البوت الكاملة</div>
+          <span class="cmd-badge badge-general">عام</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="share-bot" data-section="general">
+        <div class="cmd-icon">🚀</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/share-bot</div>
+          <div class="cmd-desc">شارك البوت مع أصدقائك</div>
+          <span class="cmd-badge badge-general">عام</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="dashboard" data-section="general">
+        <div class="cmd-icon">🖥️</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/dashboard</div>
+          <div class="cmd-desc">رابط لوحة التحكم الشاملة للبوت</div>
+          <span class="cmd-badge badge-general">عام</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="developers" data-section="general">
+        <div class="cmd-icon">👨‍💻</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/developers</div>
+          <div class="cmd-desc">عرض معلومات مطوري البوت</div>
+          <span class="cmd-badge badge-general">عام</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="tax" data-section="general">
+        <div class="cmd-icon">💰</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/tax</div>
+          <div class="cmd-desc">معرفة ضريبة أي رقم</div>
+          <span class="cmd-badge badge-general">عام</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- الإشراف -->
+    <div class="category-title">🛡️ أوامر الإشراف</div>
+    <div class="commands-grid" id="moderation-grid">
+      <div class="cmd-card" data-name="ban" data-section="moderation">
+        <div class="cmd-icon">🔨</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/ban</div>
+          <div class="cmd-desc">حظر عضو من السيرفر أو رفع الحظر عنه</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="kick" data-section="moderation">
+        <div class="cmd-icon">👟</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/kick</div>
+          <div class="cmd-desc">طرد عضو من السيرفر</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="mute" data-section="moderation">
+        <div class="cmd-icon">🔇</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/mute</div>
+          <div class="cmd-desc">كتم عضو أو إزالة الكتم عنه</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="timeout" data-section="moderation">
+        <div class="cmd-icon">⏰</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/timeout</div>
+          <div class="cmd-desc">إعطاء تايم أوت لعضو أو إزالته</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="role" data-section="moderation">
+        <div class="cmd-icon">🎭</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/role</div>
+          <div class="cmd-desc">إعطاء رتبة لعضو أو إزالتها</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="clear" data-section="moderation">
+        <div class="cmd-icon">🗑️</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/clear</div>
+          <div class="cmd-desc">حذف عدد محدد من الرسائل من الروم</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="lock" data-section="moderation">
+        <div class="cmd-icon">🔒</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/lock</div>
+          <div class="cmd-desc">قفل الروم ومنع الإرسال فيه</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="unlock" data-section="moderation">
+        <div class="cmd-icon">🔓</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/unlock</div>
+          <div class="cmd-desc">فتح الروم والسماح بالإرسال</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="hide" data-section="moderation">
+        <div class="cmd-icon">👁️</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/hide</div>
+          <div class="cmd-desc">إخفاء الروم عن الأعضاء</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="unhide" data-section="moderation">
+        <div class="cmd-icon">👁️</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/unhide</div>
+          <div class="cmd-desc">إظهار الروم للأعضاء</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="nickname" data-section="moderation">
+        <div class="cmd-icon">✏️</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/nickname</div>
+          <div class="cmd-desc">تغيير اسم مستعار لعضو أو إزالته</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="say" data-section="moderation">
+        <div class="cmd-icon">💬</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/say</div>
+          <div class="cmd-desc">جعل البوت يقول كلاماً في الروم</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="embed" data-section="moderation">
+        <div class="cmd-icon">📦</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/embed</div>
+          <div class="cmd-desc">إرسال رسالة في Embed جميل</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="send" data-section="moderation">
+        <div class="cmd-icon">📨</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/send</div>
+          <div class="cmd-desc">إرسال رسالة خاصة لعضو</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="come" data-section="moderation">
+        <div class="cmd-icon">📢</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/come</div>
+          <div class="cmd-desc">استدعاء عضو للروم الصوتي</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="setup-welcome" data-section="moderation">
+        <div class="cmd-icon">👋</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/setup-welcome</div>
+          <div class="cmd-desc">إعداد رسائل الترحيب والوداع بصورة مخصصة</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="setup-logs" data-section="moderation">
+        <div class="cmd-icon">📜</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/setup-logs</div>
+          <div class="cmd-desc">إعداد نظام سجل الأحداث</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="setlevel" data-section="moderation">
+        <div class="cmd-icon">⭐</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/setlevel</div>
+          <div class="cmd-desc">إعداد نظام الليفل والـ XP</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="setup-ticket" data-section="moderation">
+        <div class="cmd-icon">🎫</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/setup-ticket</div>
+          <div class="cmd-desc">إعداد نظام التذاكر في السيرفر</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="change-name" data-section="moderation">
+        <div class="cmd-icon">🏷️</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/change-name</div>
+          <div class="cmd-desc">تغيير اسم البوت في السيرفر</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- الرد التلقائي -->
+    <div class="category-title">🤖 الرد التلقائي</div>
+    <div class="commands-grid" id="autoreply-grid">
+      <div class="cmd-card" data-name="autoreply-add" data-section="autoreply">
+        <div class="cmd-icon">➕</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/autoreply-add</div>
+          <div class="cmd-desc">إضافة رد تلقائي على كلمة أو جملة معينة</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="autoreply-remove" data-section="autoreply">
+        <div class="cmd-icon">➖</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/autoreply-remove</div>
+          <div class="cmd-desc">حذف رد تلقائي موجود</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="autoreply-list" data-section="autoreply">
+        <div class="cmd-icon">📋</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/autoreply-list</div>
+          <div class="cmd-desc">عرض قائمة بجميع الردود التلقائية</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="setup-decoration" data-section="autoreply">
+        <div class="cmd-icon">✨</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/setup-decoration</div>
+          <div class="cmd-desc">تحديد روم الزخرفة التلقائية</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="set-emoji-room" data-section="autoreply">
+        <div class="cmd-icon">😀</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/set-emoji-room</div>
+          <div class="cmd-desc">تحديد روم لحفظ الإيموجي التلقائي</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="remove-emoji-room" data-section="autoreply">
+        <div class="cmd-icon">🗑️</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/remove-emoji-room</div>
+          <div class="cmd-desc">إزالة روم من نظام الإيموجي التلقائي</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="emoji-list" data-section="autoreply">
+        <div class="cmd-icon">📋</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/emoji-list</div>
+          <div class="cmd-desc">عرض الإيموجيات المحفوظة في السيرفر</div>
+          <span class="cmd-badge badge-general">عام</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="set-azkar-channel" data-section="autoreply">
+        <div class="cmd-icon">📿</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/set-azkar-channel</div>
+          <div class="cmd-desc">تحديد روم الأذكار الإسلامية التلقائية</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="azkar" data-section="autoreply">
+        <div class="cmd-icon">🕌</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/azkar</div>
+          <div class="cmd-desc">تفعيل أو تعطيل نظام الأذكار التلقائية</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="azkar-time" data-section="autoreply">
+        <div class="cmd-icon">⏰</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/azkar-time</div>
+          <div class="cmd-desc">تحديد وقت إرسال الأذكار</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="azkar-mode" data-section="autoreply">
+        <div class="cmd-icon">🎨</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/azkar-mode</div>
+          <div class="cmd-desc">تغيير شكل الأذكار (إمبد أو نص عادي)</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="add-autoline-channel" data-section="autoreply">
+        <div class="cmd-icon">🔗</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/add-autoline-channel</div>
+          <div class="cmd-desc">إضافة روم خط تلقائي</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- الحماية -->
+    <div class="category-title">🔒 أوامر الحماية</div>
+    <div class="commands-grid" id="protection-grid">
+      <div class="cmd-card" data-name="setup-protection" data-section="protection">
+        <div class="cmd-icon">🛡️</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/setup-protection</div>
+          <div class="cmd-desc">تفعيل أو تعطيل جميع أنظمة الحماية دفعة واحدة</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="anti-ban" data-section="protection">
+        <div class="cmd-icon">🔨</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/anti-ban</div>
+          <div class="cmd-desc">الحماية من الباند الجماعي</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="anti-kick" data-section="protection">
+        <div class="cmd-icon">👟</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/anti-kick</div>
+          <div class="cmd-desc">الحماية من الكيك الجماعي</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="anti-bots" data-section="protection">
+        <div class="cmd-icon">🤖</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/anti-bots</div>
+          <div class="cmd-desc">الحماية من إضافة بوتات غير مصرحة</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="anti-role-create" data-section="protection">
+        <div class="cmd-icon">🆕</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/anti-role-create</div>
+          <div class="cmd-desc">الحماية من إنشاء رتب جديدة</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="anti-role-edit" data-section="protection">
+        <div class="cmd-icon">✏️</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/anti-role-edit</div>
+          <div class="cmd-desc">الحماية من تعديل الرتب وصلاحياتها</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="anti-channel-create" data-section="protection">
+        <div class="cmd-icon">📢</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/anti-channel-create</div>
+          <div class="cmd-desc">الحماية من إنشاء رومات جديدة</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="anti-channel-edit" data-section="protection">
+        <div class="cmd-icon">🔧</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/anti-channel-edit</div>
+          <div class="cmd-desc">الحماية من تعديل وحذف الرومات</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="anti-webhook" data-section="protection">
+        <div class="cmd-icon">🔗</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/anti-webhook</div>
+          <div class="cmd-desc">الحماية من إنشاء ويب هوكس</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="anti-server-edit" data-section="protection">
+        <div class="cmd-icon">🏠</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/anti-server-edit</div>
+          <div class="cmd-desc">حماية اسم وصورة السيرفر من التغيير</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="protection-status" data-section="protection">
+        <div class="cmd-icon">📊</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/protection-status</div>
+          <div class="cmd-desc">عرض حالة جميع أنظمة الحماية</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="set-protect-logs" data-section="protection">
+        <div class="cmd-icon">📜</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/set-protect-logs</div>
+          <div class="cmd-desc">تحديد روم سجل الحماية</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- الليفل -->
+    <div class="category-title">⭐ نظام الليفل</div>
+    <div class="commands-grid" id="levels-grid">
+      <div class="cmd-card" data-name="rank" data-section="levels">
+        <div class="cmd-icon">📊</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/rank</div>
+          <div class="cmd-desc">عرض ليفلك وXP وترتيبك في السيرفر</div>
+          <span class="cmd-badge badge-general">عام</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="leaderboard" data-section="levels">
+        <div class="cmd-icon">🏆</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/leaderboard</div>
+          <div class="cmd-desc">لوحة المتصدرين - أعلى الأعضاء في الليفل</div>
+          <span class="cmd-badge badge-general">عام</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="setlevel enable" data-section="levels">
+        <div class="cmd-icon">✅</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/setlevel enable</div>
+          <div class="cmd-desc">تفعيل نظام الليفل في السيرفر</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="setlevel channel" data-section="levels">
+        <div class="cmd-icon">📢</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/setlevel channel</div>
+          <div class="cmd-desc">تحديد روم إشعارات الليفل</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="setlevel reset" data-section="levels">
+        <div class="cmd-icon">🔄</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/setlevel reset</div>
+          <div class="cmd-desc">إعادة تعيين بيانات ليفل عضو</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- التكت -->
+    <div class="category-title">🎫 نظام التكت</div>
+    <div class="commands-grid" id="ticket-grid">
+      <div class="cmd-card" data-name="setup-ticket" data-section="ticket">
+        <div class="cmd-icon">⚙️</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/setup-ticket</div>
+          <div class="cmd-desc">إعداد نظام التذاكر في السيرفر</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="add-ticket-button" data-section="ticket">
+        <div class="cmd-icon">🔘</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/add-ticket-button</div>
+          <div class="cmd-desc">إضافة زر فتح تكت</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="close" data-section="ticket">
+        <div class="cmd-icon">🔒</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/close</div>
+          <div class="cmd-desc">إغلاق التكت الحالي</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="delete" data-section="ticket">
+        <div class="cmd-icon">🗑️</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/delete</div>
+          <div class="cmd-desc">حذف التكت الحالي</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="add-user" data-section="ticket">
+        <div class="cmd-icon">➕</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/add-user</div>
+          <div class="cmd-desc">إضافة عضو للتكت</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="remove-user" data-section="ticket">
+        <div class="cmd-icon">➖</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/remove-user</div>
+          <div class="cmd-desc">إزالة عضو من التكت</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="rename" data-section="ticket">
+        <div class="cmd-icon">✏️</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/rename</div>
+          <div class="cmd-desc">تغيير اسم روم التكت</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="set-ticket-log" data-section="ticket">
+        <div class="cmd-icon">📜</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/set-ticket-log</div>
+          <div class="cmd-desc">تحديد روم سجل التكتات</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- أدوات أخرى -->
+    <div class="category-title">⚙️ أدوات أخرى</div>
+    <div class="commands-grid" id="utility-grid">
+      <div class="cmd-card" data-name="new-panel" data-section="utility">
+        <div class="cmd-icon">🎛️</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/new-panel</div>
+          <div class="cmd-desc">إنشاء بانل إعطاء رتب تلقائي</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="scan-tokens" data-section="utility">
+        <div class="cmd-icon">🔍</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/scan-tokens</div>
+          <div class="cmd-desc">كشف الأعضاء الوهمية في السيرفر</div>
+          <span class="cmd-badge badge-premium">Premium</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="kick-tokens" data-section="utility">
+        <div class="cmd-icon">🚫</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/kick-tokens</div>
+          <div class="cmd-desc">طرد الأعضاء الوهمية من السيرفر</div>
+          <span class="cmd-badge badge-premium">Premium</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="send-broadcast-panel" data-section="utility">
+        <div class="cmd-icon">📡</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/send-broadcast-panel</div>
+          <div class="cmd-desc">إرسال بانل التحكم في البرودكاست</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="new-apply" data-section="utility">
+        <div class="cmd-icon">📝</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/new-apply</div>
+          <div class="cmd-desc">إنشاء نظام تقديم جديد</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+      <div class="cmd-card" data-name="set-suggestions-room" data-section="utility">
+        <div class="cmd-icon">💡</div>
+        <div class="cmd-info">
+          <div class="cmd-name">/set-suggestions-room</div>
+          <div class="cmd-desc">تحديد روم الاقتراحات</div>
+          <span class="cmd-badge badge-admin">إشراف</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end tab-all -->
+</main>
+
+<script>
+function showTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+
+  const allCards = document.querySelectorAll('.cmd-card');
+  const allTitles = document.querySelectorAll('.category-title');
+  
+  allCards.forEach(c => {
+    if (tab === 'all') {
+      c.style.display = '';
+    } else {
+      c.style.display = c.dataset.section === tab ? '' : 'none';
+    }
+  });
+
+  allTitles.forEach(t => {
+    if (tab === 'all') {
+      t.style.display = '';
+    } else {
+      // Map tab to category
+      const map = {
+        general: ['💬 الأوامر العامة'],
+        moderation: ['🛡️ أوامر الإشراف'],
+        autoreply: ['🤖 الرد التلقائي'],
+        protection: ['🔒 أوامر الحماية'],
+        levels: ['⭐ نظام الليفل'],
+        ticket: ['🎫 نظام التكت'],
+        utility: ['⚙️ أدوات أخرى']
+      };
+      const show = map[tab] || [];
+      t.style.display = show.some(s => t.textContent.includes(s.replace(/[^\w\u0600-\u06FF ]/g, ''))) ? '' : 'none';
+    }
+  });
+}
+
+function searchCommands() {
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  const cards = document.querySelectorAll('.cmd-card');
+  let found = 0;
+
+  cards.forEach(c => {
+    const name = c.dataset.name || '';
+    const desc = c.querySelector('.cmd-desc')?.textContent || '';
+    const match = name.includes(q) || desc.includes(q) || q === '';
+    c.style.display = match ? '' : 'none';
+    if (match) found++;
+  });
+
+  document.getElementById('noResults').classList.toggle('show', found === 0 && q !== '');
+  
+  // Show all tabs when searching
+  document.querySelectorAll('.category-title').forEach(t => t.style.display = '');
+}
+</script>
+<script src="/js/main.js"></script>
+</body>
+</html>
