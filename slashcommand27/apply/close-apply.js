@@ -1,0 +1,25 @@
+const { SlashCommandBuilder, EmbedBuilder , PermissionsBitField,PermissionFlagsBits, ActionRowBuilder,ButtonBuilder,MessageComponentCollector,ButtonStyle } = require("discord.js");
+const { one4allDB } = require('../../db-manager');
+module.exports ={
+    adminsOnly:true,
+    data: new SlashCommandBuilder()
+    .setName('close-apply')
+    .setDescription('انهاء التقديم المفتوح')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    async execute(interaction, client) {
+        const sent = await interaction.deferReply({ fetchReply: true , ephemeral:false});
+        let embed1 = new EmbedBuilder()
+        .setFooter({text:interaction.user.username , iconURL:interaction.user.displayAvatarURL({dynamic:true})})
+        .setAuthor({name:interaction.guild.name , iconURL:interaction.guild.iconURL({dynamic:true})})
+        .setTimestamp(Date.now())
+        .setColor('#000000')
+        let apply = await applyDB.get(`apply_${interaction.guild.id}`)
+        if(!apply) {
+            embed1.setTitle(`** لا يوجد تقديم مفتوح حاليا**`)
+            return interaction.editReply({embeds:[embed1]})
+        }
+        await applyDB.delete(`apply_${interaction.guild.id}`)
+        embed1.setTitle(`**تم انهاء التقديم بنجاح**`)
+        return interaction.editReply({embeds:[embed1]})
+    }
+}
