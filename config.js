@@ -1,5 +1,5 @@
 module.exports = {
-  token: process.env.BOT_TOKEN || "MTQxMzc3NTYzOTUwNDQ4NjUwMg.GO8CvL.UfGUO7MuOKI9xhkxfABeT2Xsge0QaGcrL-WM44",
+  token: process.env.BOT_TOKEN || "MTQ3Mzk3NjYzMTg2ODY1MzY2NA.GoUKDt.m5wqPc30InnUTdyX3nJyIgqBj8hQw0mhVHzlTo",
   prefix: process.env.PREFIX || "!",
   owners: [
     process.env.OWNER_ID || "1130392962581397535",
